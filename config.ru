@@ -56,5 +56,5 @@ run Proc.new { |env|
     html << %(docker_total_mem{container="#{id}"#{labels}} #{c[:used]})
   end
 
-  ['200', {"Content-Type" => "text/plain"}, [html.join("\n")]]
+  ['200', {"Content-Type" => "text/plain"}, [html.join("\n") + "\n"]]
 }
