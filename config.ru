@@ -62,7 +62,7 @@ run Proc.new { |env|
     html << "# TYPE #{metric} counter"
     containers.each do |id, c|
       labels = c[:labels].map { |k, v| ",label_#{k}=\"#{v}\"" }.join
-      html << %(#{metric}{container="#{id}",name=#{c[:name]}#{labels}} #{c[key]})
+      html << %(#{metric}{container="#{id}",name="#{c[:name]}"#{labels}} #{c[key]})
     end
   end
 
