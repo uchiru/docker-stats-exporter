@@ -53,7 +53,7 @@ run Proc.new { |env|
   html << "# TYPE docker_total_mem counter"
   containers.each do |id, c|
     labels = c[:labels].map { |k, v| ",label_#{k}=\"#{v}\"" }.join
-    html << %(docker_total_mem{container="#{id}"#{labels}} #{c[:used]})
+    html << %(docker_total_mem{container="#{id}"#{labels}} #{c[:total]})
   end
 
   ['200', {"Content-Type" => "text/plain"}, [html.join("\n") + "\n"]]
