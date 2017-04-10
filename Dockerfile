@@ -7,6 +7,6 @@ RUN mkdir -p /app
 COPY config.ru /app/
 WORKDIR /app
 
-EXPOSE 9292
+EXPOSE 3120
 
-CMD ["rackup", "-o", "0.0.0.0"]
+CMD ["rackup", "-o", "0.0.0.0", "-p", "3120"]
