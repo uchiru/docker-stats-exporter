@@ -24,7 +24,7 @@ run Proc.new { |env|
   `docker ps --format "{{.ID}} -- {{.Labels}}"`.strip.split("\n").each { |line|
     a = line.split(" -- ")
     id = a[0]
-    labels = a[1].split(",")
+    labels = a[1].to_s.split(",")
     if containers.key?(id)
       labels.each do |l|
         k, v = l.split("=")
