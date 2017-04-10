@@ -9,7 +9,7 @@ def unbytify(s)
     s.to_f*(1024**4)
 
   elsif s.index("kB")
-    s.to_f*(1024)
+    s.to_f*(1000)
   elsif s.index("MB")
     s.to_f*(1000**2)
   elsif s.index("GB")
@@ -23,17 +23,18 @@ def unbytify(s)
 end
 
 run Proc.new { |env| 
-  containers = `docker stats --no-stream --format "{{.Container}} -- {{.CPUPerc}} -- {{.MemUsage}} -- {{.BlockIO}} -- {{.NetIO}}"`.strip.split("\n").map { |line|
+  containers = `docker stats --no-stream --format "{{.Container}} -- {{.Name}} -- {{.CPUPerc}} -- {{.MemUsage}} -- {{.BlockIO}} -- {{.NetIO}}"`.strip.split("\n").map { |line|
     a = line.split(" -- ")
     id = a[0]
-    cpu = a[1].sub("%", "").to_f
-    used = unbytify(a[2].split("/")[0].strip)
-    total = unbytify(a[2].split("/")[1].strip)
-    block_i = unbytify(a[3].split("/")[0].strip)
-    block_o = unbytify(a[3].split("/")[1].strip)
-    net_i = unbytify(a[4].split("/")[0].strip)
-    net_o = unbytify(a[4].split("/")[1].strip)
-    [id, {cpu: cpu, used: used, total: total, block_i: block_i, block_o: block_o, net_i: net_i, net_o: net_o, labels: {}}]
+    name = a[1]
+    cpu = a[2].sub("%", "").to_f
+    used = unbytify(a[3].split("/")[0].strip)
+    total = unbytify(a[3].split("/")[1].strip)
+    block_i = unbytify(a[4].split("/")[0].strip)
+    block_o = unbytify(a[4].split("/")[1].strip)
+    net_i = unbytify(a[5].split("/")[0].strip)
+    net_o = unbytify(a[5].split("/")[1].strip)
+    [id, {cpu: cpu, name: name, used: used, total: total, block_i: block_i, block_o: block_o, net_i: net_i, net_o: net_o, labels: {}}]
   }.to_h
   `docker ps --format "{{.ID}} -- {{.Labels}}"`.strip.split("\n").each { |line|
     a = line.split(" -- ")
@@ -61,7 +62,7 @@ run Proc.new { |env|
     html << "# TYPE #{metric} counter"
     containers.each do |id, c|
       labels = c[:labels].map { |k, v| ",label_#{k}=\"#{v}\"" }.join
-      html << %(docker_cpu{container="#{id}"#{labels}} #{c[key]})
+      html << %(#{metric}{container="#{id}",name=#{c[:name]}#{labels}} #{c[key]})
     end
   end
 
