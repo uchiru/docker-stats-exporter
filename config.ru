@@ -1,14 +1,14 @@
 def unbytify(s)
   if s.index("KiB")
-    s.to_i*(1024)
+    s.to_f*(1024)
   elsif s.index("MiB")
-    s.to_i*(1024**2)
+    s.to_f*(1024**2)
   elsif s.index("GiB")
-    s.to_i*(1024**3)
+    s.to_f*(1024**3)
   elsif s.index("TiB")
-    s.to_i*(1024**4)
+    s.to_f*(1024**4)
   else
-    s.to_i
+    s.to_f
   end
 end
 
