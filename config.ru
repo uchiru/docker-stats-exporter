@@ -37,7 +37,7 @@ run Proc.new { |env|
       block_o = unbytify(a[4].split("/")[1].strip)
       net_i = unbytify(a[5].split("/")[0].strip)
       net_o = unbytify(a[5].split("/")[1].strip)
-      [id, {cpu: cpu, name: name, used: used, total: total, block_i: block_i, block_o: block_o, net_i: net_i, net_o: net_o, labels: {}}]
+      [id, {up: 1, cpu: cpu, name: name, used: used, total: total, block_i: block_i, block_o: block_o, net_i: net_i, net_o: net_o, labels: {}}]
     }.to_h
     `docker ps --format "{{.ID}} -- {{.Labels}}"`.strip.split("\n").each { |line|
       a = line.split(" -- ")
@@ -51,25 +51,16 @@ run Proc.new { |env|
       end
     }
 
-    cache.each { |id, c| c[:up] = 0 }
+    cache.each { |id, c| c[:up] = c[:cpu] = c[:used] = c[:total] = 0 }
     containers.each do |id, c|
-      cache[id] = {
-        expired: Time.now + 60, # 1 minute expiration
-        up: 1,
-        cpu: 0,
-        name: c[:name],
-        used: 0,
-        total: 0,
-        block_i: c[:block_i],
-        block_o: c[:block_o],
-        net_i: c[:net_i],
-        net_o: c[:net_o],
-        labels: c[:labels]
-      }
+      # 1 minute expiration
+      cache[id] = c.merge(expired: Time.now + 60)
     end
+    cache = cache.reject { |id, c| c[:expired] < Time.now }.to_h
 
     html = []
     [
+      [:up, "docker_up", "docker container availability"],
       [:cpu, "docker_cpu", "docker container cpu usage"],
       [:used, "docker_used_mem", "docker container mem usage"],
       [:total, "docker_total_mem", "docker container mem available"],
