@@ -26,7 +26,10 @@ cache = {}
 
 run Proc.new { |env| 
   if env["PATH_INFO"] == "/metrics"
-    containers = `docker stats --no-stream --format "{{.Container}} -- {{.Name}} -- {{.CPUPerc}} -- {{.MemUsage}} -- {{.BlockIO}} -- {{.NetIO}}"`.strip.split("\n").map { |line|
+    containers = `docker stats --no-stream --format "{{.Container}} -- {{.Name}} -- {{.CPUPerc}} -- {{.MemUsage}} -- {{.BlockIO}} -- {{.NetIO}}"`.strip.split("\n").reject { |line|
+      a = line.split(" -- ")
+      a[1] == "--" || a[1] == ""
+    }.map { |line|
       a = line.split(" -- ")
       id = a[0]
       name = a[1]
