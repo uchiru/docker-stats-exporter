@@ -81,8 +81,10 @@ run Proc.new { |env|
     end
 
     ['200', {"Content-Type" => "text/plain"}, [html.join("\n") + "\n"]]
+  elsif env["PATH_INFO"] == "/images"
+    ['200', {"Content-Type" => "text/plain"}, [`docker images --format "{{.Repository}}:{{.Tag}}"`.strip]]
   elsif env["PATH_INFO"] == "/"
-    ['200', {"Content-Type" => "text/html"}, ["<a href=/metrics>metrics</a>"]]
+    ['200', {"Content-Type" => "text/html"}, ["<a href=/metrics>metrics</a>, <a href=/images>images</a>"]]
   else
     ['404', {"Content-Type" => "text/html"}, ["Not Found"]]
   end
