@@ -56,8 +56,8 @@ run Proc.new { |env|
 
     cache.each { |id, c| c[:up] = c[:cpu] = c[:used] = c[:total] = 0 }
     containers.each do |id, c|
-      # 1 minute expiration
-      cache[id] = c.merge(expired: Time.now + 60)
+      # 3 minutes expiration
+      cache[id] = c.merge(expired: Time.now + 3*60)
     end
     cache = cache.reject { |id, c| c[:expired] < Time.now }.to_h
 
