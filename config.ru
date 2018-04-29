@@ -8,19 +8,21 @@ LABELS = (ENV["LABELS"] || "").split(",")
 puts "LABELS=#{LABELS.join(",")}"
 $cache = {}
 
-def containers_with_stats
-  Docker::Container.all.map { |c|
-    begin; [c, c.stats]; rescue; [c, nil]; end
-  }.reject { |c, s|
-    s.nil?
-  }
-end
+class Helpers 
+  def self.containers_with_stats
+    Docker::Container.all.map { |c|
+      begin; [c, c.stats]; rescue; [c, nil]; end
+    }.reject { |c, s|
+      s.nil?
+    }
+  end
 
-def honey_context
-  out = {}
-  out["project_name"] = ENV["PROJECT_NAME"] if ENV["PROJECT_NAME"]
-  out["nomad_ip"] = ENV["NOMAD_IP_port"] if ENV["NOMAD_IP_port"]
-  out
+  def self.honey_context
+    out = {}
+    out["project_name"] = ENV["PROJECT_NAME"] if ENV["PROJECT_NAME"]
+    out["nomad_ip"] = ENV["NOMAD_IP_port"] if ENV["NOMAD_IP_port"]
+    out
+  end
 end
 
 Thread.new do
@@ -28,7 +30,7 @@ Thread.new do
     begin
       puts "Grab docker info: #{Time.now}"
       start = {}
-      containers = containers_with_stats.map { |c, s|
+      containers = Helpers.containers_with_stats.map { |c, s|
         id = c.id[0..11]
         start[id] = [s["cpu_stats"]["cpu_usage"]["total_usage"], s["cpu_stats"]["system_cpu_usage"]]
         [id, {
@@ -43,7 +45,7 @@ Thread.new do
         }]
       }.to_h
       sleep 1.0
-      containers_with_stats.each { |c, s|
+      Helpers.containers_with_stats.each { |c, s|
         id = c.id[0..11]
         if containers.key?(id)
           # https://github.com/moby/moby/blob/131e2bf12b2e1b3ee31b628a501f96bbb901f479/api/client/stats.go#L309
@@ -62,14 +64,14 @@ Thread.new do
     rescue => e
       puts e
       puts e.backtrace
-      Honeybadger.notify(e, context: honey_context)
+      Honeybadger.notify(e, context: Helpers.honey_context)
     end
     sleep 5
   end
 end
 
 before do
-  Honeybadger.context(honey_context)
+  Honeybadger.context(Helpers.honey_context)
 end
 
 get "/" do
