@@ -47,8 +47,8 @@ Thread.new do
       sleep 1.0
       Helpers.containers_with_stats.each { |c, s|
         id = c.id[0..11]
-        if containers.key?(id) && start[id]
-          # https://github.com/moby/moby/blob/131e2bf12b2e1b3ee31b628a501f96bbb901f479/api/client/stats.go#L309
+        # https://github.com/moby/moby/blob/131e2bf12b2e1b3ee31b628a501f96bbb901f479/api/client/stats.go#L309
+        if containers.key?(id) && start[id] && start[id][0] && start[id][1] && s["cpu_stats"]["cpu_usage"]["total_usage"] && s["cpu_stats"]["system_cpu_usage"]
           cpuDelta = s["cpu_stats"]["cpu_usage"]["total_usage"] - start[id][0]
           systemDelta = s["cpu_stats"]["system_cpu_usage"] - start[id][1]
           if systemDelta > 0.0 && cpuDelta > 0.0 
