@@ -18,8 +18,8 @@ if ARGV[0] == "dev" && git_branch == 'master'
   version      = "v#{current_version}-dev#{dev + 1}"
 
 elsif ARGV[0] == "next" && git_branch == 'master'
-  version      = "v#{current_version + 1}"
-  next_version = "v#{current_version + 2}-dev0"
+  version      = "v#{current_version}"
+  next_version = "v#{current_version + 1}-dev0"
 
 else
   puts "Current version: #{current_version}"
