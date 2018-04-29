@@ -19,7 +19,7 @@ if ARGV[0] == "dev" && git_branch == 'master'
 
 elsif ARGV[0] == "next" && git_branch == 'master'
   version      = "v#{current_version + 1}"
-  next_version = "v#{current_version + 1}-dev0"
+  next_version = "v#{current_version + 2}-dev0"
 
 else
   puts "Current version: #{current_version}"
@@ -46,7 +46,7 @@ if ARGV[0] == "next"
   File.write(CHANGELOG_PATH, cl_header + File.read(CHANGELOG_PATH))
 end
 exec %(git commit -am"Release #{version}")
-exec %(git tag v#{version})
+exec %(git tag #{version})
 exec %(git push)
 exec %(git push --tags)
 if next_version
