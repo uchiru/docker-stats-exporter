@@ -1,7 +1,4 @@
-FROM docker:17.03.1-ce
-
-RUN apk --no-cache add ruby ruby-dev ruby-irb ruby-rdoc ruby-io-console build-base
-RUN gem install bundler
+FROM ruby:2.3.3
 
 ENV APP_ENV production
 RUN mkdir -p /app
