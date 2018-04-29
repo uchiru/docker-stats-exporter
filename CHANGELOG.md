@@ -1,3 +1,5 @@
+* Add honey context to better error detection
+
 # docker-stats-exporter - v20 - (April 29, 2018)
 
 * Extact collecting docker metrics to separate thread

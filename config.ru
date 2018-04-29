@@ -16,6 +16,13 @@ def containers_with_stats
   }
 end
 
+def honey_context
+  out = {}
+  out["project_name"] = ENV["PROJECT_NAME"] if ENV["PROJECT_NAME"]
+  out["nomad_ip"] = ENV["NOMAD_IP_port"] if ENV["NOMAD_IP_port"]
+  out
+end
+
 Thread.new do
   loop do
     begin
@@ -55,14 +62,22 @@ Thread.new do
     rescue => e
       puts e
       puts e.backtrace
-      Honeybadger.notify(e)
+      Honeybadger.notify(e, context: honey_context)
     end
     sleep 5
   end
 end
 
+before do
+  Honeybadger.context(honey_context)
+end
+
 get "/" do
   "<a href=/metrics>metrics</a>"
+end
+
+get "/test_500" do
+  raise '500'
 end
 
 get "/metrics" do
