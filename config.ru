@@ -1,14 +1,17 @@
 #\ -o 0.0.0.0 -p 3120
 require 'sinatra'
+require 'honeybadger'
 require 'docker'
 
+LABELS = (ENV["LABELS"] || "").split(",")
+puts "LABELS=#{LABELS.join(",")}"
+
 get "/" do
-  "<a href=/metrics>metrics</a>, <a href=/images>images</a>"
+  "<a href=/metrics>metrics</a>"
 end
 
-get "/images" do
-  content_type "text/plain"
-  `docker images --format "{{.Repository}}:{{.Tag}}"`.strip
+get "/test_500" do
+  raise '500'
 end
 
 cache = {}
@@ -56,7 +59,7 @@ get "/metrics" do
     html << "# HELP #{metric} #{desc}"
     html << "# TYPE #{metric} counter"
     cache.each do |id, c|
-      labels = c[:labels].map { |k, v| ",label_#{k}=\"#{v}\"" }.join
+      labels = c[:labels].select { |k, v| LABELS.index(k) }.map { |k, v| ",label_#{k}=\"#{v}\"" }.join
       html << %(#{metric}{container="#{id}",name="#{c[:name]}"#{labels}} #{c[key]})
     end
   end
