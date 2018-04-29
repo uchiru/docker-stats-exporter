@@ -1,0 +1,58 @@
+#!/usr/bin/env ruby
+require 'scanf'
+require 'yaml'
+require 'ostruct'
+
+PROJECT = "docker-stats-exporter"
+VERSION_PATH = File.expand_path('../../VERSION', __FILE__)
+CHANGELOG_PATH = File.expand_path('../../CHANGELOG.md', __FILE__)
+
+def git_branch
+  `git rev-parse --abbrev-ref HEAD`.chomp
+end
+
+current_version = File.read(VERSION_PATH).scanf('v%d').first
+dev = File.read(VERSION_PATH).scanf('%*[^-]-dev%d').last.to_i
+
+if ARGV[0] == "dev" && git_branch == 'master'
+  version      = "v#{current_version}-dev#{dev + 1}"
+
+elsif ARGV[0] == "next" && git_branch == 'master'
+  version      = "v#{current_version + 1}"
+  next_version = "v#{current_version + 1}-dev0"
+
+else
+  puts "Current version: #{current_version}"
+  puts
+  puts "Usage:"
+  puts
+  puts "  ./bin/release dev         # => v#{current_version}-dev#{dev + 1}"
+  puts "  ./bin/release next        # => v#{current_version + 1}"
+  exit
+end
+
+def exec(cmd)
+  puts "[exec] #{cmd}"
+  system cmd
+end
+
+puts "releasing version: #{version}"
+exec %(git add .)
+exec %(git commit -am"uncommitted changes before release #{version}")
+exec %(git pull --rebase)
+File.write(VERSION_PATH, version)
+if ARGV[0] == "next"
+  cl_header = "# #{PROJECT} - #{version} - (#{Time.now.strftime('%B %-d, %Y')})\n\n"
+  File.write(CHANGELOG_PATH, cl_header + File.read(CHANGELOG_PATH))
+end
+exec %(git commit -am"Release #{version}")
+exec %(git tag v#{version})
+exec %(git push)
+exec %(git push --tags)
+if next_version
+  File.write(VERSION_PATH, next_version)
+  exec %(git commit -am"Start version #{next_version}")
+  exec %(git push)
+end
+
+puts "Done."
