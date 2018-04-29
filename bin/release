@@ -27,7 +27,7 @@ else
   puts "Usage:"
   puts
   puts "  ./bin/release dev         # => v#{current_version}-dev#{dev + 1}"
-  puts "  ./bin/release next        # => v#{current_version + 1}"
+  puts "  ./bin/release next        # => v#{current_version}"
   exit
 end
 
