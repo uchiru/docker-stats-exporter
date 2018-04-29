@@ -1,3 +1,5 @@
+# docker-stats-exporter - v22 - (April 30, 2018)
+
 * Fix 500 when stats returns nils
 
 # docker-stats-exporter - v21 - (April 30, 2018)
