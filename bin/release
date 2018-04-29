@@ -54,5 +54,6 @@ if next_version
   exec %(git commit -am"Start version #{next_version}")
   exec %(git push)
 end
+exec %(#{File.expand_path("../publish", __FILE__)} #{version})
 
 puts "Done."

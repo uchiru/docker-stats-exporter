@@ -14,7 +14,7 @@ get "/test_500" do
   raise '500'
 end
 
-cache = {}
+$cache = {}
 get "/metrics" do
   start = {}
   containers = Docker::Container.all.map { |c|
@@ -43,10 +43,10 @@ get "/metrics" do
     end
   }
 
-  cache.each { |id, c| c[:up] = c[:pids] = c[:cpu] = c[:used] = c[:total] = 0 }
+  $cache.each { |id, c| c[:up] = c[:pids] = c[:cpu] = c[:used] = c[:total] = 0 }
   # 3 minutes expiration
-  containers.each { |id, c| cache[id] = c.merge(expired: Time.now + 3*60) }
-  cache = cache.reject { |id, c| c[:expired] < Time.now }.to_h
+  containers.each { |id, c| $cache[id] = c.merge(expired: Time.now + 3*60) }
+  $cache = $cache.reject { |id, c| c[:expired] < Time.now }.to_h
 
   html = []
   [
@@ -58,7 +58,7 @@ get "/metrics" do
   ].each do |key, metric, desc|
     html << "# HELP #{metric} #{desc}"
     html << "# TYPE #{metric} counter"
-    cache.each do |id, c|
+    $cache.each do |id, c|
       labels = c[:labels].select { |k, v| LABELS.index(k) }.map { |k, v| ",label_#{k}=\"#{v}\"" }.join
       html << %(#{metric}{container="#{id}",name="#{c[:name]}"#{labels}} #{c[key]})
     end
