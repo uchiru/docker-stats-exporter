@@ -1,3 +1,5 @@
+# docker-stats-exporter - v20 - (April 29, 2018)
+
 * Extact collecting docker metrics to separate thread
 * Add `docker_max_used_mem` prometheus value
 
