@@ -1,4 +1,5 @@
 * Add honey context to better error detection
+* Fix 500 during cpu usage calc
 
 # docker-stats-exporter - v20 - (April 29, 2018)
 
