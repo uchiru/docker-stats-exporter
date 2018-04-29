@@ -1,3 +1,5 @@
+* Fix 500 when stats returns nils
+
 # docker-stats-exporter - v21 - (April 30, 2018)
 
 * Add honey context to better error detection

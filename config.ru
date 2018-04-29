@@ -100,7 +100,7 @@ get "/metrics" do
     html << "# TYPE #{metric} counter"
     $cache.each do |id, c|
       labels = c[:labels].select { |k, v| LABELS.index(k) }.map { |k, v| ",label_#{k}=\"#{v}\"" }.join
-      html << %(#{metric}{container="#{id}",name="#{c[:name]}"#{labels}} #{c[key]})
+      html << %(#{metric}{container="#{id}",name="#{c[:name]}"#{labels}} #{key == :cpu ? c[key].to_f : c[key].to_i})
     end
   end
   content_type "text/plain"
