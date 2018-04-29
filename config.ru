@@ -8,6 +8,10 @@ LABELS = (ENV["LABELS"] || "").split(",")
 puts "LABELS=#{LABELS.join(",")}"
 $cache = {}
 
+Honeybadger.exception_filter do |notice|
+  notice[:error_message] =~ /SignalException: SIGTERM/
+end
+
 class Helpers 
   def self.containers_with_stats
     Docker::Container.all.map { |c|

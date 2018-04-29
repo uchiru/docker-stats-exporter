@@ -1,6 +1,7 @@
 * Add honey context to better error detection
 * Fix 500 during cpu usage calc
 * Use puma as web server
+* Dont send 'SignalException: SIGTERM' exception to honeybadger
 
 # docker-stats-exporter - v20 - (April 29, 2018)
 
