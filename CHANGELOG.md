@@ -1,3 +1,6 @@
+* Extact collecting docker metrics to separate thread
+* Add `docker_max_used_mem` prometheus value
+
 # docker-stats-exporter - v19 - (April 29, 2018)
 
 * Add `LABELS` env variable to scrape labels by white list
