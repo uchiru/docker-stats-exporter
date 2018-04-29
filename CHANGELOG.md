@@ -1,3 +1,5 @@
+# docker-stats-exporter - v21 - (April 30, 2018)
+
 * Add honey context to better error detection
 * Fix 500 during cpu usage calc
 * Use puma as web server
