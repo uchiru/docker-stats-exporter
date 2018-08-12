@@ -1,3 +1,5 @@
+* Get docker stats using threads
+
 # docker-stats-exporter - v23 - (August 12, 2018)
 
 * Dont scrap containers name, just id

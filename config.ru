@@ -2,6 +2,7 @@
 require 'sinatra'
 require 'honeybadger'
 require 'docker'
+require 'parallel'
 require 'pp'
 
 LABELS = (ENV["LABELS"] || "").split(",")
@@ -14,7 +15,7 @@ end
 
 class Helpers 
   def self.containers_with_stats
-    Docker::Container.all.map { |c|
+    Parallel.map(Docker::Container.all, in_threads: 15) { |c|
       begin; [c, c.stats]; rescue; [c, nil]; end
     }.reject { |c, s|
       s.nil?
