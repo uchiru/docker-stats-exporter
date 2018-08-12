@@ -1,3 +1,5 @@
+# docker-stats-exporter - v23 - (August 12, 2018)
+
 * Dont scrap containers name, just id
 
 # docker-stats-exporter - v22 - (April 30, 2018)
