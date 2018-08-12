@@ -38,7 +38,6 @@ Thread.new do
         id = c.id[0..11]
         start[id] = [s["cpu_stats"]["cpu_usage"]["total_usage"], s["cpu_stats"]["system_cpu_usage"]]
         [id, {
-          name: c.info["Names"].first.to_s[1..-1],
           up: 1,
           used: s["memory_stats"]["usage"],
           max_used: s["memory_stats"]["max_usage"],
@@ -100,7 +99,7 @@ get "/metrics" do
     html << "# TYPE #{metric} counter"
     $cache.each do |id, c|
       labels = c[:labels].select { |k, v| LABELS.index(k) }.map { |k, v| ",label_#{k}=\"#{v}\"" }.join
-      html << %(#{metric}{container="#{id}",name="#{c[:name]}"#{labels}} #{key == :cpu ? c[key].to_f : c[key].to_i})
+      html << %(#{metric}{container="#{id}"#{labels}} #{key == :cpu ? c[key].to_f : c[key].to_i})
     end
   end
   content_type "text/plain"

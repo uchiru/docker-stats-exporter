@@ -1,3 +1,5 @@
+* Dont scrap containers name, just id
+
 # docker-stats-exporter - v22 - (April 30, 2018)
 
 * Fix 500 when stats returns nils
