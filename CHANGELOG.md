@@ -1,3 +1,5 @@
+# docker-stats-exporter - v24 - (August 12, 2018)
+
 * Get docker stats using threads
 
 # docker-stats-exporter - v23 - (August 12, 2018)
