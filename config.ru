@@ -35,16 +35,6 @@ class Helpers
   end
 end
 
-# NOTE: wrap this function inside mutex by yourself
-def _oom_cache_incr(key, value)
-  $oom_cache[key] ||= {value: 0}
-  # 24h expiration for ooms counters
-  $oom_cache[key][:expired] = Time.now + 24*60*60
-  # incr
-  $oom_cache[key][:value] += value
-  $oom_cache[key][:value]
-end
-
 Thread.new do
   loop do
     begin
@@ -81,9 +71,6 @@ Thread.new do
         # 3 minutes expiration
         containers.each { |id, c|
           $cache[id] = c.merge(expired: Time.now + 3*60)
-          unless c[:labels].empty?
-            _oom_cache_incr(c[:labels], 0)
-          end
         }
       }
 
@@ -132,8 +119,11 @@ if SYSLOG_PATH
         # 3. Increment oom counter
         unless key.empty?
           $semaphore.synchronize {
-            v = _oom_cache_incr(key, 1)
-            puts "#{key.inspect}: ooms = #{v}"
+            $oom_cache[key] ||= {value: 0}
+            # 14d expiration for ooms counters
+            $oom_cache[key][:expired] = Time.now + 14*24*60*60
+            $oom_cache[key][:value] += 1
+            puts "#{key.inspect}: ooms = #{$oom_cache[key][:value]}"
           }
         end
       end
@@ -167,11 +157,19 @@ get "/metrics" do
     html << "# TYPE #{metric} counter"
     $semaphore.synchronize {
       $cache.each do |id, c|
-        labels = c[:labels].select { |k, v| LABELS.index(k) }.map { |k, v| ",label_#{k}=\"#{v}\"" }.join
-        html << %(#{metric}{container="#{id[0..11]}"#{labels}} #{key == :cpu ? c[key].to_f : c[key].to_i})
+        labels = c[:labels].map { |k, v| "label_#{k}=\"#{v}\"" }.join(",")
+        html << %(#{metric}{container="#{id[0..11]}",#{labels}} #{key == :cpu ? c[key].to_f : c[key].to_i})
       end
     }
   end
+  html << "# HELP docker_oom amount of ooms"
+  html << "# TYPE docker_oom counter"
+  $semaphore.synchronize {
+    $oom_cache.each do |key, c|
+      labels = key.map { |k, v| "label_#{k}=\"#{v}\"" }.join(",")
+      html << %(docker_oom{#{labels}} #{c[:value]})
+    end
+  }
   content_type "text/plain"
   html.join("\n") + "\n"
 end
