@@ -8,7 +8,7 @@ require 'pp'
 
 LABELS = (ENV["LABELS"] || "").split(",")
 puts "LABELS=#{LABELS.join(",")}"
-semaphore = Mutex.new
+$semaphore = Mutex.new
 $cache = {}
 $oom_cache = {}
 SYSLOG_PATH = ENV["SYSLOG_PATH"]
@@ -33,6 +33,16 @@ class Helpers
     out["nomad_ip"] = ENV["NOMAD_IP_port"] if ENV["NOMAD_IP_port"]
     out
   end
+end
+
+# NOTE: wrap this function inside mutex by yourself
+def _oom_cache_incr(key, value)
+  $oom_cache[key] ||= {value: 0}
+  # 24h expiration for ooms counters
+  $oom_cache[key][:expired] = Time.now + 24*60*60
+  # incr
+  $oom_cache[key][:value] += value
+  $oom_cache[key][:value]
 end
 
 Thread.new do
@@ -66,10 +76,19 @@ Thread.new do
         end
       }
 
-      semaphore.synchronize {
+      $semaphore.synchronize {
         $cache.each { |id, c| c[:up] = c[:pids] = c[:cpu] = c[:used] = c[:max_used] = c[:total] = 0 }
         # 3 minutes expiration
-        containers.each { |id, c| $cache[id] = c.merge(expired: Time.now + 3*60) }
+        containers.each { |id, c|
+          $cache[id] = c.merge(expired: Time.now + 3*60)
+          unless c[:labels].empty?
+            _oom_cache_incr(c[:labels], 0)
+          end
+        }
+      }
+
+      # expire caches
+      $semaphore.synchronize {
         $cache = $cache.reject { |id, c| c[:expired] < Time.now }.to_h
         $oom_cache = $oom_cache.reject { |id, c| c[:expired] < Time.now }.to_h
       }
@@ -86,13 +105,37 @@ if SYSLOG_PATH
   Thread.new do
     File::Tail::Logfile.tail(SYSLOG_PATH, :backward => 1) do |line|
       if line =~ /Task in \/docker\/(.*?) killed as a result of limit/
+        # let try to find oomed docker container
         id = $1
-        semaphore.synchronize {
-          $oom_cache[id] ||= {value: 0}
-          # 3 minutes expiration
-          $oom_cache[id][:expired] = Time.now + 3*60
-          $oom_cache[id][:value] += 1
+        key = {}
+        puts "#{id}: find OOM for docker container"
+
+        # 1. check cache
+        $semaphore.synchronize {
+          if $cache.key?(id)
+            key = $cache[id][:labels]
+            puts "#{id}: fetch key from cache: #{key.inspect}"
+          end
         }
+
+        # 2. try to get info from docker engine
+        if key.empty?
+          begin
+            c = Docker::Container.get(id)
+            key = (c.info.dig("Config", "Labels") || {}).select { |k, v| LABELS.index(k) }.to_h
+            puts "#{id}: fetch key from docker engine: #{key.inspect}"
+          rescue => e
+            puts "Error: #{e.inspect}"
+          end
+        end
+
+        # 3. Increment oom counter
+        unless key.empty?
+          $semaphore.synchronize {
+            v = _oom_cache_incr(key, 1)
+            puts "#{key.inspect}: ooms = #{v}"
+          }
+        end
       end
     end
   end
@@ -122,7 +165,7 @@ get "/metrics" do
   ].each do |key, metric, desc|
     html << "# HELP #{metric} #{desc}"
     html << "# TYPE #{metric} counter"
-    semaphore.synchronize {
+    $semaphore.synchronize {
       $cache.each do |id, c|
         labels = c[:labels].select { |k, v| LABELS.index(k) }.map { |k, v| ",label_#{k}=\"#{v}\"" }.join
         html << %(#{metric}{container="#{id[0..11]}"#{labels}} #{key == :cpu ? c[key].to_f : c[key].to_i})
