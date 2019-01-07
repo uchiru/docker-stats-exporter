@@ -2,12 +2,17 @@
 require 'sinatra'
 require 'honeybadger'
 require 'docker'
+require 'file-tail'
 require 'parallel'
 require 'pp'
 
 LABELS = (ENV["LABELS"] || "").split(",")
 puts "LABELS=#{LABELS.join(",")}"
+semaphore = Mutex.new
 $cache = {}
+$oom_cache = {}
+SYSLOG_PATH = ENV["SYSLOG_PATH"]
+Thread.abort_on_exception = true
 
 Honeybadger.exception_filter do |notice|
   notice[:error_message] =~ /SignalException: SIGTERM/
@@ -36,7 +41,7 @@ Thread.new do
       puts "Grab docker info: #{Time.now}"
       start = {}
       containers = Helpers.containers_with_stats.map { |c, s|
-        id = c.id[0..11]
+        id = c.id
         start[id] = [s["cpu_stats"]["cpu_usage"]["total_usage"], s["cpu_stats"]["system_cpu_usage"]]
         [id, {
           up: 1,
@@ -50,7 +55,7 @@ Thread.new do
       }.to_h
       sleep 1.0
       Helpers.containers_with_stats.each { |c, s|
-        id = c.id[0..11]
+        id = c.id
         # https://github.com/moby/moby/blob/131e2bf12b2e1b3ee31b628a501f96bbb901f479/api/client/stats.go#L309
         if containers.key?(id) && start[id] && start[id][0] && start[id][1] && s["cpu_stats"]["cpu_usage"]["total_usage"] && s["cpu_stats"]["system_cpu_usage"]
           cpuDelta = s["cpu_stats"]["cpu_usage"]["total_usage"] - start[id][0]
@@ -61,16 +66,35 @@ Thread.new do
         end
       }
 
-      $cache.each { |id, c| c[:up] = c[:pids] = c[:cpu] = c[:used] = c[:max_used] = c[:total] = 0 }
-      # 3 minutes expiration
-      containers.each { |id, c| $cache[id] = c.merge(expired: Time.now + 3*60) }
-      $cache = $cache.reject { |id, c| c[:expired] < Time.now }.to_h
+      semaphore.synchronize {
+        $cache.each { |id, c| c[:up] = c[:pids] = c[:cpu] = c[:used] = c[:max_used] = c[:total] = 0 }
+        # 3 minutes expiration
+        containers.each { |id, c| $cache[id] = c.merge(expired: Time.now + 3*60) }
+        $cache = $cache.reject { |id, c| c[:expired] < Time.now }.to_h
+        $oom_cache = $oom_cache.reject { |id, c| c[:expired] < Time.now }.to_h
+      }
     rescue => e
       puts e
       puts e.backtrace
       Honeybadger.notify(e, context: Helpers.honey_context)
     end
     sleep 5
+  end
+end
+
+if SYSLOG_PATH
+  Thread.new do
+    File::Tail::Logfile.tail(SYSLOG_PATH, :backward => 1) do |line|
+      if line =~ /Task in \/docker\/(.*?) killed as a result of limit/
+        id = $1
+        semaphore.synchronize {
+          $oom_cache[id] ||= {value: 0}
+          # 3 minutes expiration
+          $oom_cache[id][:expired] = Time.now + 3*60
+          $oom_cache[id][:value] += 1
+        }
+      end
+    end
   end
 end
 
@@ -98,10 +122,12 @@ get "/metrics" do
   ].each do |key, metric, desc|
     html << "# HELP #{metric} #{desc}"
     html << "# TYPE #{metric} counter"
-    $cache.each do |id, c|
-      labels = c[:labels].select { |k, v| LABELS.index(k) }.map { |k, v| ",label_#{k}=\"#{v}\"" }.join
-      html << %(#{metric}{container="#{id}"#{labels}} #{key == :cpu ? c[key].to_f : c[key].to_i})
-    end
+    semaphore.synchronize {
+      $cache.each do |id, c|
+        labels = c[:labels].select { |k, v| LABELS.index(k) }.map { |k, v| ",label_#{k}=\"#{v}\"" }.join
+        html << %(#{metric}{container="#{id[0..11]}"#{labels}} #{key == :cpu ? c[key].to_f : c[key].to_i})
+      end
+    }
   end
   content_type "text/plain"
   html.join("\n") + "\n"

@@ -1,3 +1,5 @@
+* Add option to tail syslog file to find OOMs
+
 # docker-stats-exporter - v24 - (August 12, 2018)
 
 * Get docker stats using threads
