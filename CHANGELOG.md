@@ -1,3 +1,5 @@
+# docker-stats-exporter - v25 - (April 26, 2019)
+
 * Update gems
 * Add option to tail syslog file to find OOMs
 
