@@ -12,7 +12,7 @@ GEM
     mustermann (1.0.3)
     parallel (1.12.1)
     puma (3.11.4)
-    rack (2.0.7)
+    rack (2.1.4)
     rack-protection (2.0.5)
       rack
     sinatra (2.0.5)
