@@ -9,8 +9,8 @@ cd .build
 git checkout $1
 
 # build
-docker build -t quay.io/uchiru/docker-stats-exporter:$1 .
-docker push quay.io/uchiru/docker-stats-exporter:$1
+docker build -t uchiru/docker-stats-exporter:$1 .
+docker push uchiru/docker-stats-exporter:$1
 
 rm -fr .build
 echo "DONE :)"
