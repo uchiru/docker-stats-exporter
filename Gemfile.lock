@@ -8,7 +8,7 @@ GEM
     file-tail (1.2.0)
       tins (~> 1.0)
     honeybadger (3.3.0)
-    json (2.1.0)
+    json (2.5.1)
     mustermann (1.0.3)
     parallel (1.12.1)
     puma (3.11.4)
