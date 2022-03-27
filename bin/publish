@@ -9,8 +9,8 @@ cd .build
 git checkout $1
 
 # build
-docker build -t uchiru/docker-stats-exporter:$1 .
-docker push uchiru/docker-stats-exporter:$1
+docker build -t sysregistry.runit.cc/docker-stats-exporter:$1 .
+docker push sysregistry.runit.cc/docker-stats-exporter:$1
 
 rm -fr .build
 echo "DONE :)"
