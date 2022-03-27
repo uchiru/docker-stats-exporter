@@ -1,3 +1,5 @@
+# docker-stats-exporter - v26 - (March 27, 2022)
+
 # docker-stats-exporter - v25 - (April 26, 2019)
 
 * Update gems
