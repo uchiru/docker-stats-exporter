@@ -1,4 +1,4 @@
-FROM ruby:2.3.3
+FROM ruby:2.7.6
 
 ENV APP_ENV production
 RUN mkdir -p /app
