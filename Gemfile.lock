@@ -1,20 +1,23 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    docker-api (1.33.4)
-      excon (>= 0.38.0)
-      json
-    excon (0.56.0)
+    docker-api (2.2.0)
+      excon (>= 0.47.0)
+      multi_json
+    excon (0.92.5)
     file-tail (1.2.0)
       tins (~> 1.0)
     honeybadger (3.3.0)
-    json (2.1.0)
+    multi_json (1.15.0)
     mustermann (1.0.3)
     parallel (1.12.1)
     puma (3.11.4)
     rack (2.0.7)
     rack-protection (2.0.5)
       rack
+    rackup (0.1.0)
+      rack
+      webrick
     sinatra (2.0.5)
       mustermann (~> 1.0)
       rack (~> 2.0)
@@ -22,6 +25,7 @@ GEM
       tilt (~> 2.0)
     tilt (2.0.9)
     tins (1.20.2)
+    webrick (1.7.0)
 
 PLATFORMS
   ruby
@@ -33,10 +37,11 @@ DEPENDENCIES
   parallel
   puma
   rack (>= 2.0.6)
+  rackup
   sinatra (>= 2.0.2)
 
 RUBY VERSION
-   ruby 2.3.3p222
+   ruby 2.7.6p219
 
 BUNDLED WITH
-   1.16.1
+   2.1.4
