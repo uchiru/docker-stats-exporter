@@ -1,59 +1,65 @@
 #!/usr/bin/env ruby
-require 'scanf'
-require 'yaml'
-require 'ostruct'
 
-PROJECT = "docker-stats-exporter"
-VERSION_PATH = File.expand_path('../../VERSION', __FILE__)
-CHANGELOG_PATH = File.expand_path('../../CHANGELOG.md', __FILE__)
-
-def git_branch
-  `git rev-parse --abbrev-ref HEAD`.chomp
+class String
+  def colorize(color_code); "\e[#{color_code}m#{self}\e[0m"; end
+  def red; colorize(31); end
+  def green; colorize(32); end
+  def light_blue; colorize(36); end
 end
 
-current_version = File.read(VERSION_PATH).scanf('v%d').first
-dev = File.read(VERSION_PATH).scanf('%*[^-]-dev%d').last.to_i
-
-if ARGV[0] == "dev" && git_branch == 'master'
-  version      = "v#{current_version}-dev#{dev + 1}"
-
-elsif ARGV[0] == "next" && git_branch == 'master'
-  version      = "v#{current_version}"
-  next_version = "v#{current_version + 1}-dev0"
-
-else
-  puts "Current version: #{current_version}"
-  puts
-  puts "Usage:"
-  puts
-  puts "  ./bin/release dev         # => v#{current_version}-dev#{dev + 1}"
-  puts "  ./bin/release next        # => v#{current_version}"
-  exit
-end
-
-def exec(cmd)
+def sysexec(cmd)
   puts "[exec] #{cmd}"
-  system cmd
+  system(cmd)
+  abort "ERROR: cmd returned non zero status" unless $?.success?
 end
 
-puts "releasing version: #{version}"
-exec %(git add .)
-exec %(git commit -am"uncommitted changes before release #{version}")
-exec %(git pull --rebase)
-File.write(VERSION_PATH, version)
-if ARGV[0] == "next"
-  cl_header = "# #{PROJECT} - #{version} - (#{Time.now.strftime('%B %-d, %Y')})\n\n"
-  File.write(CHANGELOG_PATH, cl_header + File.read(CHANGELOG_PATH))
+# check repo & prepare
+if (out = `git status --porcelain`.strip) != ""
+  puts out
+  abort "ERROR: ".red + "current repository not commited properly" 
 end
-exec %(git commit -am"Release #{version}")
-exec %(git tag #{version})
-exec %(git push)
-exec %(git push --tags)
-if next_version
-  File.write(VERSION_PATH, next_version)
-  exec %(git commit -am"Start version #{next_version}")
-  exec %(git push)
+sysexec("git pull --rebase && git push")
+
+# read || init major version
+config = File.expand_path("../.release", __dir__)
+if File.exists?(config)
+  major = File.readlines(config).map(&:strip).find { |s| s =~ /^major=/ }.split("=").last.to_i
+else
+  puts ""
+  puts "WARNING: ".light_blue + "please create .release file with 'major=0' content"
+  major = 0
 end
-exec %(#{File.expand_path("../publish", __FILE__)} #{version})
+
+# calc version
+branch = `git symbolic-ref --short -q HEAD`.strip
+hash = `git rev-parse --verify HEAD`.strip
+if branch == 'master'
+  versions = `git ls-remote --tags -q`.strip.split("\n").map { |s|
+    s.split.last.sub("refs/tags/", "")
+  }.select { |s|
+    s =~ /^v#{major}.\d+?$/
+  }.map { |s|
+    s.split(".").last.to_i
+  }.sort
+  version = "v#{major}.#{(versions.last || 0) + 1}"
+else
+  desc = branch.split(//).map { |c| c =~ /^[A-Za-z0-9]$/ ? c : "-" }[0..30].join
+  version = "dev-#{desc}-#{hash[0..7]}"
+end
+
+# release
+print "\nTag this version as: #{version.green} (y/n) > "
+input = STDIN.gets.strip
+if input == "y" || input == 'yes'
+  puts ""
+  sysexec("git tag #{version} && git push --tags")
+else
+  abort "ERROR: releasing aborted by user"
+end
+
+# publish
+if File.exists?(File.join(__dir__, "publish"))
+  sysexec(File.join(__dir__, "publish") + " #{version}")
+end
 
 puts "Done."
