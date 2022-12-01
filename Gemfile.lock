@@ -7,23 +7,24 @@ GEM
     excon (0.92.5)
     file-tail (1.2.0)
       tins (~> 1.0)
-    honeybadger (3.3.0)
     multi_json (1.15.0)
-    mustermann (1.0.3)
+    mustermann (2.0.2)
+      ruby2_keywords (~> 0.0.1)
     parallel (1.12.1)
     puma (3.11.4)
-    rack (2.0.7)
-    rack-protection (2.0.5)
+    rack (2.2.4)
+    rack-protection (2.2.3)
       rack
     rackup (0.1.0)
       rack
       webrick
-    sinatra (2.0.5)
-      mustermann (~> 1.0)
-      rack (~> 2.0)
-      rack-protection (= 2.0.5)
+    ruby2_keywords (0.0.5)
+    sinatra (2.2.3)
+      mustermann (~> 2.0)
+      rack (~> 2.2)
+      rack-protection (= 2.2.3)
       tilt (~> 2.0)
-    tilt (2.0.9)
+    tilt (2.0.11)
     tins (1.20.2)
     webrick (1.7.0)
 
@@ -33,7 +34,6 @@ PLATFORMS
 DEPENDENCIES
   docker-api
   file-tail
-  honeybadger (~> 3.1)
   parallel
   puma
   rack (>= 2.0.6)
